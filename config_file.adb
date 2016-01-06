@@ -166,7 +166,6 @@ package body Config_File is
       Read_Only		: in     Boolean := False)
    is
       File		: File_Type;
-      Opened		: Boolean := False;
 
       function Read_Line (F : in File_Type) return String is
          Last		: Natural;
@@ -185,7 +184,7 @@ package body Config_File is
       This.Read_Only := False;
 
       Open (File, In_File, Filename);
-      Opened := True;
+      This.Opened := True;
 
       while not End_Of_File (File) loop
          declare
@@ -199,35 +198,45 @@ package body Config_File is
       end loop;
 
       Close (File);
-      Opened := False;
+      This.Opened := False;
       This.Read_Only := Read_Only;
 
    exception
       when others =>
-         if Opened then
+         if This.Opened then
             Close (File);
          end if;
          raise CONFIG_IO_ERROR;
    end Load;
-
+   
+   ---------------
+   -- Is_Loaded --
+   ---------------
+   
+   function Is_Loaded
+     (This : in Config_Data) return Boolean
+   is
+   begin
+      return This.Opened;
+   end Is_Loaded;
+   
    ----------
    -- Save --
    ----------
 
    procedure Save
-     (This		: in     Config_Data;
-      Filename		: in     String)
+     (This     : in out Config_Data;
+      Filename : in     String)
    is
       C			: Config_Hash.Cursor;
       File		: File_Type;
-      Opened		: Boolean := False;
    begin
       if This.Read_Only then
          raise CONFIG_READ_ONLY with "attempted to save read-only config";
       end if;
 
       Create (File, Out_File, Filename);
-      Opened := True;
+      This.Opened := True;
 
       C := Config_Hash.First (This.Data);
       while C /= Config_Hash.No_Element loop
@@ -242,10 +251,10 @@ package body Config_File is
       end loop;
 
       Close (File);
-      Opened := False;
+      This.Opened := False;
    exception
       when others =>
-         if Opened then
+         if This.Opened then
             Close (File);
          end if;
          raise CONFIG_IO_ERROR;

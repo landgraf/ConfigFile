@@ -110,10 +110,14 @@ package Config_File is
    --  If Read_Only is true, then attempts to write to the configuration file
    --  will result in CONFIG_READ_ONLY.
    --  If the file can't be loaded, CONFIG_IO_ERROR will be raised.
-
+   
+   function Is_Loaded 
+     (This : in Config_Data) return Boolean;
+   --  Return True if config file was loaded with Load call and not closed
+   
    procedure Save
-     (This		: in     Config_Data;
-      Filename		: in     String);
+     (This              : in out Config_Data;
+      Filename          : in     String);
    --  Saves the configuration file to disk.
    --  If the file has been opened Read_Only, then CONFIG_READ_ONLY will be
    --  raised.
@@ -183,8 +187,9 @@ private
       "="		=> Ada.Strings.Unbounded."=");
 
    type Config_Data is record
-      Data		: Config_Hash.Map;
-      Read_Only		: Boolean := False;
+      Data	: Config_Hash.Map;
+      Opened    : Boolean := False;
+      Read_Only	: Boolean := False;
    end record;
 
    procedure Split_Input
