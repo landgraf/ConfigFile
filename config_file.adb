@@ -165,7 +165,8 @@ package body Config_File is
       Filename		: in     String;
       Read_Only		: in     Boolean := False)
    is
-      File		: File_Type;
+      File   : File_Type;
+      Opened : Boolean := False;
 
       function Read_Line (F : in File_Type) return String is
          Last		: Natural;
@@ -184,7 +185,7 @@ package body Config_File is
       This.Read_Only := False;
 
       Open (File, In_File, Filename);
-      This.Opened := True;
+      Opened := True;
 
       while not End_Of_File (File) loop
          declare
@@ -196,16 +197,17 @@ package body Config_File is
             Set_Unbounded_String (This, Key, Value);
          end;
       end loop;
-
+      This.Loaded := True;
       Close (File);
-      This.Opened := False;
+      Opened := False;
       This.Read_Only := Read_Only;
 
    exception
       when others =>
-         if This.Opened then
+         if Opened then
             Close (File);
          end if;
+         This.Loaded := False;
          raise CONFIG_IO_ERROR;
    end Load;
    
@@ -217,7 +219,7 @@ package body Config_File is
      (This : in Config_Data) return Boolean
    is
    begin
-      return This.Opened;
+      return This.Loaded;
    end Is_Loaded;
    
    ----------
@@ -228,15 +230,16 @@ package body Config_File is
      (This     : in out Config_Data;
       Filename : in     String)
    is
-      C			: Config_Hash.Cursor;
-      File		: File_Type;
+      C	     : Config_Hash.Cursor;
+      File   : File_Type;
+      Opened : Boolean := False;
    begin
       if This.Read_Only then
          raise CONFIG_READ_ONLY with "attempted to save read-only config";
       end if;
 
       Create (File, Out_File, Filename);
-      This.Opened := True;
+      Opened := True;
 
       C := Config_Hash.First (This.Data);
       while C /= Config_Hash.No_Element loop
@@ -251,10 +254,10 @@ package body Config_File is
       end loop;
 
       Close (File);
-      This.Opened := False;
+      Opened := False;
    exception
       when others =>
-         if This.Opened then
+         if Opened then
             Close (File);
          end if;
          raise CONFIG_IO_ERROR;

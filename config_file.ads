@@ -188,7 +188,7 @@ private
 
    type Config_Data is record
       Data	: Config_Hash.Map;
-      Opened    : Boolean := False;
+      Loaded    : Boolean := False;
       Read_Only	: Boolean := False;
    end record;
 
